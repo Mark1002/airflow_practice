@@ -16,21 +16,21 @@ default_args = {
     'email_on_failure': False,
     'email_on_retry': False,
     'retries': 1,
-    'retry_delay': datetime.timedelta(minutes=5),
+    'retry_delay': datetime.timedelta(minutes=1),
     'start_date': YESTERDAY,
 }
-
-def my_sleeping_function(sec: int):
-    print(f'sleep for {sec} seconds...')
-    time.sleep(sec)
-
-def make_fail_task():
-    raise AirflowException("fail airflow task!")
 
 with DAG(
         'composer_demo_dag',
         default_args=default_args,
         schedule_interval=datetime.timedelta(days=1)) as dag:
+    
+    def my_sleeping_function(sec: int):
+        print(f'sleep for {sec} seconds...')
+        time.sleep(sec)
+
+    def make_fail_task():
+        raise AirflowException("fail airflow task!")
     
     start = DummyOperator(
         task_id='start'
@@ -39,7 +39,7 @@ with DAG(
     # Print the dag_run id from the Airflow logs
     print_dag_run_conf = BashOperator(
         task_id='print_dag_run_conf', bash_command='echo {{ dag_run.id }}')
-    
+
     t1 = PythonOperator(
         task_id='task_1', python_callable=my_sleeping_function,
         op_kwargs={'sec': 10}
@@ -65,4 +65,5 @@ with DAG(
         task_id='end'
     )
 
-    start >> print_dag_run_conf >>[t1, t2] >> t3 >> [t4, t5] >> end
+    start >> print_dag_run_conf >> [t1, t2]
+    [t1, t2] >> t3 >> [t4, t5] >> end
