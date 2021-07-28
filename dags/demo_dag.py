@@ -2,6 +2,7 @@
 import datetime
 import time
 from airflow import DAG
+from airflow import AirflowException
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators.bash_operator import BashOperator
 from airflow.operators.python_operator import PythonOperator
@@ -22,6 +23,9 @@ default_args = {
 def my_sleeping_function(sec: int):
     print(f'sleep for {sec} seconds...')
     time.sleep(sec)
+
+def make_fail_task():
+    raise AirflowException("fail airflow task!")
 
 with DAG(
         'composer_demo_dag',
@@ -53,8 +57,12 @@ with DAG(
         task_id='task_4', bash_command='echo "execute task 4!"'
     )
 
+    t5 = PythonOperator(
+        task_id='fail_task', python_callable=make_fail_task
+    )
+
     end = DummyOperator(
         task_id='end'
     )
 
-    start >> print_dag_run_conf >>[t1, t2, t3, t4] >> end
+    start >> print_dag_run_conf >>[t1, t2] >> t3 >> [t4, t5] >> end
