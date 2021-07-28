@@ -1,8 +1,10 @@
 """For demo."""
 import datetime
+import time
 from airflow import DAG
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators.bash_operator import BashOperator
+from airflow.operators.python_operator import PythonOperator
 
 YESTERDAY = datetime.datetime.now() - datetime.timedelta(days=1)
 
@@ -17,6 +19,10 @@ default_args = {
     'start_date': YESTERDAY,
 }
 
+def my_sleeping_function(sec: int):
+    print(f'sleep for {sec} seconds...')
+    time.sleep(sec)
+
 with DAG(
         'composer_demo_dag',
         default_args=default_args,
@@ -30,8 +36,9 @@ with DAG(
     print_dag_run_conf = BashOperator(
         task_id='print_dag_run_conf', bash_command='echo {{ dag_run.id }}')
     
-    t1 = BashOperator(
-        task_id='task_1', bash_command='echo "execute task 1!"'
+    t1 = PythonOperator(
+        task_id='task_1', python_callable=my_sleeping_function,
+        op_kwargs={'sec': 10}
     )
 
     t2 = BashOperator(
