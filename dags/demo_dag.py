@@ -7,7 +7,8 @@ from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators.bash_operator import BashOperator
 from airflow.operators.python_operator import PythonOperator
 
-YESTERDAY = datetime.datetime.now() - datetime.timedelta(days=1)
+d = datetime.datetime.now().date()
+YESTERDAY = datetime.datetime(d.year, d.month, d.day) - datetime.timedelta(days=1)
 
 default_args = {
     'owner': 'mark',
@@ -23,7 +24,7 @@ default_args = {
 with DAG(
         'composer_demo_dag',
         default_args=default_args,
-        schedule_interval=datetime.timedelta(days=1)) as dag:
+        schedule_interval="0 2 * * *") as dag:
     
     def my_sleeping_function(sec: int):
         print(f'sleep for {sec} seconds...')
